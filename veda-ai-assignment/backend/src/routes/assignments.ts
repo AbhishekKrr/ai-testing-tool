@@ -132,6 +132,13 @@ router.get('/:id/paper', async (req: Request, res: Response) => {
   res.json({ source: 'db', paper });
 });
 
+// DELETE /api/assignments/:id
+router.delete('/:id', async (req: Request, res: Response) => {
+  await Assignment.findByIdAndDelete(req.params.id);
+  await QuestionPaperModel.deleteOne({ assignmentId: req.params.id });
+  res.json({ success: true });
+});
+
 // GET /api/assignments/job/:jobId/status — poll job status from Redis
 router.get('/job/:jobId/status', async (req: Request, res: Response) => {
   const jobId = String(req.params['jobId'] ?? '');
