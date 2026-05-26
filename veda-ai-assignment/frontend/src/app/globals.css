@@ -19,6 +19,23 @@ body {
 /* Screen-only / Print-only visibility */
 .print-only { display: none !important; }
 
+/* Mobile responsive — sidebar + bottom nav */
+.sidebar-wrapper  { display: block; }
+.bottom-nav-bar   { display: none; }
+.mobile-hamburger { display: none; }
+.desktop-back     { display: flex; }
+.desktop-user     { display: flex; }
+
+@media (max-width: 767px) {
+  .sidebar-wrapper  { display: none !important; }
+  .bottom-nav-bar   { display: flex !important; }
+  .mobile-hamburger { display: flex !important; }
+  .desktop-back     { display: none !important; }
+  .desktop-user     { display: none !important; }
+  /* Extra bottom padding so content clears the bottom nav */
+  main { padding-bottom: 80px !important; }
+}
+
 /* Print styles */
 @media print {
   .no-print { display: none !important; }

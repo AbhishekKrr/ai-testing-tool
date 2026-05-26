@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Inter } from "next/font/google";
 import "./globals.css";
 
@@ -17,6 +17,12 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "VedaAI – Assignment Creator",
   description: "AI-powered question paper generator for educators",
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({

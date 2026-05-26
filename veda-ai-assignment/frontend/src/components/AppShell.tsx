@@ -32,7 +32,7 @@ export default function AppShell({
       style={{ background: 'linear-gradient(180deg, #EEEEEE 0%, #DADADA 100%)' }}
     >
       {/* ── Sidebar — desktop only ── */}
-      <div className="no-print hidden md:block" style={{ padding: '12px 0 12px 12px', flexShrink: 0 }}>
+      <div className="no-print sidebar-wrapper" style={{ padding: '12px 0 12px 12px', flexShrink: 0 }}>
         <Sidebar
           activeOverride={activeNavOverride}
           ctaLabel={sidebarCtaLabel}
@@ -43,8 +43,8 @@ export default function AppShell({
       {/* ── Mobile drawer overlay ── */}
       {drawerOpen && (
         <div
-          className="fixed inset-0 z-40 md:hidden no-print"
-          style={{ background: 'rgba(0,0,0,0.4)' }}
+          className="fixed inset-0 z-40 no-print"
+          style={{ display: 'block', background: 'rgba(0,0,0,0.4)' }}
           onClick={() => setDrawerOpen(false)}
         >
           <div
@@ -82,7 +82,7 @@ export default function AppShell({
         >
           {/* Hamburger — mobile only */}
           <button
-            className="md:hidden"
+            className="mobile-hamburger"
             onClick={() => setDrawerOpen(true)}
             style={{
               width: '40px', height: '40px', flexShrink: 0,
@@ -101,7 +101,7 @@ export default function AppShell({
 
           {/* Back button — desktop only */}
           <button
-            className="hidden md:flex"
+            className="desktop-back"
             onClick={() => router.back()}
             style={{
               width: '40px', height: '40px', flexShrink: 0,
@@ -157,7 +157,7 @@ export default function AppShell({
 
           {/* User pill — desktop only */}
           <button
-            className="hidden md:flex"
+            className="desktop-user"
             style={{
               alignItems: 'center',
               padding: '6px 12px', gap: '8px',
@@ -185,18 +185,18 @@ export default function AppShell({
         </header>
 
         {/* ── Scrollable content — adds bottom padding on mobile for bottom nav ── */}
-        <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
+        <main className="flex-1 overflow-y-auto">
           {children}
         </main>
       </div>
 
       {/* ── Bottom nav — mobile only ── */}
       <nav
-        className="fixed bottom-0 left-0 right-0 md:hidden no-print"
+        className="bottom-nav-bar no-print"
         style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0,
           background: '#FFFFFF',
           borderTop: '1px solid rgba(0,0,0,0.08)',
-          display: 'flex',
           padding: '8px 0 max(8px, env(safe-area-inset-bottom))',
           zIndex: 30,
         }}
