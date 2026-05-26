@@ -1,216 +1,70 @@
-# VedaAI – AI Assessment Creator
+# VedaAI – Assignment Creator
 
-A full-stack application that allows teachers to create structured question papers using AI. Built with Next.js 16, Express 5, MongoDB, Redis, BullMQ, and Claude AI.
+Built this for teachers to generate question papers without spending hours writing questions manually. You fill in what you want (subject, question types, marks), it calls an AI in the background and spits out a properly formatted paper ready to print.
 
----
+## What it does
 
-## 🏗️ Architecture Overview
+Teachers can create assignments by specifying question types (MCQ, short answer, long answer, true/false, fill in the blanks), how many questions per type, and marks. The AI generates a full question paper with sections, difficulty tags, and an answer key. The paper can be downloaded as a PDF directly from the browser.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        FRONTEND (Next.js 16)                │
-│  ┌──────────────┐  ┌──────────────┐  ┌───────────────────┐  │
-│  │ Create Page  │  │ Results Page │  │   Zustand Store   │  │
-│  │ (Form + UX)  │  │ (Live Paper) │  │  (Global State)   │  │
-│  └──────┬───────┘  └──────┬───────┘  └────────┬──────────┘  │
-│         │                 │                   │              │
-│         │         WebSocket (socket.io-client) │              │
-└─────────┼─────────────────┼───────────────────┼─────────────┘
-          │ REST API         │ WS Events          │
-          ▼                 ▼                   │
-┌─────────────────────────────────────────────────────────────┐
-│                    BACKEND (Express 5)                       │
-│  ┌──────────────┐  ┌──────────────┐  ┌───────────────────┐  │
-│  │ REST Routes  │  │  Socket.IO   │  │   BullMQ Worker   │  │
-│  │ /api/assign  │  │  (WS Server) │  │ (AI Generation)   │  │
-│  └──────┬───────┘  └──────────────┘  └────────┬──────────┘  │
-│         │                                     │              │
-│  ┌──────▼────────────────────────────────────▼──────────┐   │
-│  │ Services: MongoDB (data) · Redis (cache) · BullMQ (q) │  │
-│  └──────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-          │
-          ▼
-┌─────────────────────┐
-│  Claude AI (Sonnet)  │
-│  Structured prompt  │
-│  → JSON response    │
-└─────────────────────┘
-```
+Real-time progress updates via WebSocket so you're not just staring at a blank screen while it generates.
 
-### Request Flow
+## Tech
 
-1. Teacher fills the assignment form → submits
-2. Frontend `POST /api/assignments` (with optional PDF/text)
-3. Backend creates MongoDB document + enqueues BullMQ job
-4. Returns `{ assignmentId, jobId }` → frontend navigates to `/results/:id`
-5. **Worker** picks up the job:
-   - Builds structured prompt from assignment data
-   - Calls Claude Sonnet 4.6 API
-   - Parses JSON response into typed `QuestionPaper` model
-   - Saves to MongoDB
-   - Emits `job:completed` via Socket.IO
-6. Frontend receives WebSocket event → renders paper instantly
-7. Redis caches the paper for subsequent fetches
+- **Frontend** — Next.js, TypeScript, Tailwind, Zustand
+- **Backend** — Express, Socket.IO, BullMQ (job queue)
+- **DB** — MongoDB
+- **Cache / Queue** — Redis
+- **AI** — Groq (llama-3.3-70b)
 
----
+## Running locally
 
-## 🚀 Getting Started
+You'll need Node 20+, and either Docker or cloud instances of MongoDB and Redis.
 
-### Prerequisites
-
-- Node.js ≥ 20
-- Docker & Docker Compose (for MongoDB + Redis)
-- Anthropic API key ([get one here](https://console.anthropic.com))
-
-### 1. Start MongoDB + Redis
-
-```bash
-docker-compose up -d
-```
-
-This spins up:
-- MongoDB on `localhost:27017`
-- Redis on `localhost:6379`
-
-### 2. Backend Setup
+**Backend**
 
 ```bash
 cd backend
 cp .env.example .env
-# Open .env and set your ANTHROPIC_API_KEY
+# fill in your keys
 npm install
 npm run dev
 ```
 
-### 3. Frontend Setup
+**Frontend**
 
 ```bash
 cd frontend
 cp .env.example .env.local
+# set NEXT_PUBLIC_BACKEND_URL=http://localhost:4000
 npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+Open `http://localhost:3000`
 
-### Stop services
+## Environment variables
 
-```bash
-docker-compose down
-```
-
----
-
-## 📁 Project Structure
-
-```
-veda-ai-assignment/
-├── backend/
-│   └── src/
-│       ├── index.ts              # Express + Socket.IO bootstrap
-│       ├── types/index.ts        # Shared TypeScript types
-│       ├── models/
-│       │   ├── Assignment.ts     # MongoDB Assignment schema
-│       │   └── QuestionPaper.ts  # MongoDB QuestionPaper schema
-│       ├── routes/
-│       │   └── assignments.ts    # REST API endpoints
-│       ├── queues/
-│       │   └── generationQueue.ts # BullMQ queue setup
-│       ├── workers/
-│       │   └── generationWorker.ts # BullMQ worker (AI calls here)
-│       └── services/
-│           ├── aiService.ts      # Claude API + prompt engineering
-│           └── cacheService.ts   # Redis helper
-│
-└── frontend/
-    └── src/
-        ├── app/
-        │   ├── layout.tsx        # Root layout with nav
-        │   ├── page.tsx          # Landing page
-        │   ├── create/page.tsx   # Assignment creation form
-        │   └── results/[id]/
-        │       ├── page.tsx      # Server component (awaits params)
-        │       └── ResultsClient.tsx # Client component (WS + polling)
-        ├── components/
-        │   ├── AssignmentForm.tsx    # Multi-section form
-        │   ├── QuestionPaperView.tsx # Paper renderer + print
-        │   └── ui/
-        │       ├── Badge.tsx         # Difficulty badge
-        │       └── ProgressBar.tsx   # Job progress bar
-        ├── hooks/
-        │   └── useWebSocket.ts   # Socket.IO client hook
-        ├── store/
-        │   └── useAssignmentStore.ts # Zustand global store
-        └── types/index.ts        # Frontend types
-```
-
----
-
-## ⚙️ Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Frontend | Next.js 16, TypeScript, Tailwind CSS v4 |
-| State | Zustand |
-| Real-time | Socket.IO (client + server) |
-| Backend | Express 5, TypeScript |
-| Database | MongoDB + Mongoose |
-| Cache | Redis (ioredis) |
-| Queue | BullMQ |
-| AI | Anthropic Claude claude-sonnet-4-6 |
-
----
-
-## 🤖 AI Approach
-
-### Prompt Engineering
-
-The prompt is fully structured — it tells Claude:
-- Subject, topic, grade level, instructions
-- Exactly how many questions per section and at what marks
-- Required output schema (JSON only, no markdown)
-- Constraints: MCQ must have 4 options, difficulty must vary, etc.
-
-### Response Parsing
-
-The response is:
-1. Extracted with a regex to strip any accidental markdown wrapping
-2. Parsed as JSON
-3. Mapped through `parsePaper()` which:
-   - Assigns UUIDs to every question and section
-   - Validates and defaults missing fields
-   - Returns a strongly-typed `QuestionPaper` object
-
-The UI **never renders raw LLM text** — only the parsed structure.
-
----
-
-## ✨ Features
-
-- **Multi-type question support**: MCQ, short answer, long answer, true/false, fill-in-blank
-- **Real-time progress**: WebSocket updates as AI generates
-- **Structured paper view**: Sections, difficulty badges, marks
-- **Student info fields**: Name, roll number, section
-- **PDF export**: Browser print with optimized print styles
-- **Redis caching**: Papers cached for fast re-fetching
-- **File upload**: Optional PDF/text reference material
-- **Form validation**: Client + server side
-
----
-
-## 🔑 Environment Variables
-
-### Backend (`.env`)
+Backend `.env`:
 ```
 PORT=4000
-MONGODB_URI=mongodb://localhost:27017/veda-ai
-REDIS_URL=redis://localhost:6379
-ANTHROPIC_API_KEY=sk-ant-...
+MONGODB_URI=your_mongodb_uri
+REDIS_URL=your_redis_url
+GROQ_API_KEY=your_groq_key
 FRONTEND_URL=http://localhost:3000
 ```
 
-### Frontend (`.env.local`)
+Frontend `.env.local`:
 ```
 NEXT_PUBLIC_BACKEND_URL=http://localhost:4000
 ```
+
+## How the generation works
+
+When you submit the form, the backend creates an assignment record and pushes a job to a BullMQ queue. A worker picks it up, builds a prompt with all the constraints (question counts, marks, types), sends it to the Groq API, parses the JSON response, and saves the result to MongoDB. The frontend gets notified via WebSocket when it's done.
+
+The AI is told to return strict JSON — sections, questions, options, answers, difficulty levels. The parser assigns IDs and fills in any missing defaults before it hits the UI.
+
+## Known limitations
+
+- PDF file upload is accepted but text extraction isn't implemented yet — only `.txt` files are actually read and passed to the AI as context
+- The free Render tier spins down after inactivity so the first request after a while will be slow
