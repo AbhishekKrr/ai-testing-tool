@@ -25,13 +25,34 @@ async function bootstrap(): Promise<void> {
   const app = express();
   const httpServer = http.createServer(app);
 
-  // ── Socket.IO ────────────────────────────────────────────────
-  const corsOrigin = FRONTEND_URL === '*' ? '*' : FRONTEND_URL;
+  // ── CORS — allow any vercel.app subdomain + localhost ────────
+  const allowedOrigins = [
+    'http://localhost:3000',
+    FRONTEND_URL,
+  ].filter(Boolean);
+
+  function corsOriginFn(
+    origin: string | undefined,
+    cb: (err: Error | null, allow?: boolean) => void
+  ) {
+    // Allow requests with no origin (curl, Postman, server-to-server)
+    if (!origin) return cb(null, true);
+    // Allow if it matches an allowed origin or any vercel.app deploy
+    if (
+      allowedOrigins.includes(origin) ||
+      origin.endsWith('.vercel.app') ||
+      origin.endsWith('.onrender.com')
+    ) {
+      return cb(null, true);
+    }
+    return cb(new Error(`CORS: origin ${origin} not allowed`));
+  }
 
   const io = new SocketServer(httpServer, {
     cors: {
-      origin: corsOrigin,
+      origin: corsOriginFn,
       methods: ['GET', 'POST'],
+      credentials: true,
     },
   });
 
@@ -50,7 +71,7 @@ async function bootstrap(): Promise<void> {
   setSocketServer(io);
 
   // ── Middleware ───────────────────────────────────────────────
-  app.use(cors({ origin: corsOrigin }));
+  app.use(cors({ origin: corsOriginFn, credentials: true }));
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
