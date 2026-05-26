@@ -109,9 +109,9 @@ export default function CreateAssignmentClient() {
         </div>
         <p className="text-[13px] text-[#94A3B8] mb-5">Set up a new assignment for your students</p>
 
-        {/* Step progress bar */}
-        <div className="w-full h-1 bg-[#E8ECF0] rounded-full mb-6 overflow-hidden">
-          <div className="h-full bg-[#7C3AED] rounded-full" style={{ width: '50%' }} />
+        {/* Step progress bar — dark thin line, matches Figma */}
+        <div className="w-full h-[3px] bg-[#E8ECF0] mb-6 overflow-hidden">
+          <div className="h-full bg-[#1A1A2E]" style={{ width: '50%' }} />
         </div>
 
         {/* Card */}
@@ -129,33 +129,31 @@ export default function CreateAssignmentClient() {
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                className="border border-dashed border-[#D1D5DB] rounded-xl p-8 text-center cursor-pointer hover:border-[#7C3AED]/50 hover:bg-[#F9F8FF] transition-colors"
+                className="border border-dashed border-[#CBD5E1] rounded-xl py-10 text-center cursor-pointer hover:border-[#7C3AED]/40 hover:bg-[#F9F8FF] transition-colors bg-white"
               >
-                <div className="flex flex-col items-center gap-3">
-                  {/* Upload icon */}
-                  <div className="w-10 h-10 flex items-center justify-center">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                      <polyline points="17 8 12 3 7 8"/>
-                      <line x1="12" y1="3" x2="12" y2="15"/>
-                    </svg>
-                  </div>
+                <div className="flex flex-col items-center gap-2.5">
+                  {/* Upload cloud icon */}
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="16 16 12 12 8 16"/>
+                    <line x1="12" y1="12" x2="12" y2="21"/>
+                    <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+                  </svg>
                   <div>
                     <p className="text-[13px] text-[#5A6478] font-medium">
                       {fileName || 'Choose a file or drag & drop it here'}
                     </p>
-                    <p className="text-[11px] text-[#94A3B8] mt-0.5">JPEG, PNG, upto 5MB</p>
+                    <p className="text-[11px] text-[#94A3B8] mt-0.5">JPEG, PNG, upto 10MB</p>
                   </div>
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-                    className="text-[12px] font-medium text-[#5A6478] border border-[#D1D5DB] rounded-lg px-4 py-1.5 hover:bg-[#F4F6F8] transition-colors"
+                    className="mt-1 text-[12px] font-medium text-[#5A6478] border border-[#CBD5E1] rounded-lg px-5 py-1.5 hover:bg-[#F4F6F8] transition-colors bg-white"
                   >
                     Browse Files
                   </button>
                 </div>
               </div>
-              <p className="text-[11px] text-[#94A3B8] mt-1.5 ml-0.5">
+              <p className="text-[11px] text-[#94A3B8] mt-1.5">
                 Upload images of your preferred document/image
               </p>
               <input

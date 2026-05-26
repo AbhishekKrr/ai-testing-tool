@@ -88,34 +88,39 @@ export default function AssignmentsDashboard() {
           /* ── EMPTY STATE ─────────────────────────────────────────────── */
           <div className="flex items-center justify-center h-full min-h-[500px]">
             <div className="text-center max-w-sm">
-              {/* Illustration */}
-              <div className="relative w-44 h-44 mx-auto mb-6">
-                {/* Decorative sparkles */}
-                <div className="absolute top-1 left-6 text-[#F59E0B] text-xl font-bold select-none">✦</div>
-                <div className="absolute bottom-3 right-3 text-[#F59E0B] text-xs select-none">✦</div>
-                <div className="absolute top-8 right-8 text-[#F59E0B] text-[10px] select-none">✦</div>
-                {/* Main illustration */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="relative">
-                    {/* Document stack — back */}
-                    <div className="w-28 h-36 bg-white rounded-xl shadow border border-[#E8ECF0] absolute -top-2 -left-2 rotate-[-7deg]" />
-                    {/* Document — front */}
-                    <div className="w-28 h-36 bg-white rounded-xl shadow border border-[#E8ECF0] relative z-10 flex flex-col gap-2 p-4 pt-5">
-                      <div className="w-16 h-2 bg-[#E8ECF0] rounded-full" />
-                      <div className="w-12 h-2 bg-[#E8ECF0] rounded-full" />
-                      <div className="w-14 h-2 bg-[#E8ECF0] rounded-full" />
-                    </div>
-                    {/* Magnifier with red X */}
-                    <div className="absolute -bottom-5 -right-5 w-16 h-16 bg-white rounded-full border-2 border-[#E8ECF0] shadow-md flex items-center justify-center z-20">
-                      <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
-                        <circle cx="14" cy="14" r="9" stroke="#D1D5DB" strokeWidth="2.5"/>
-                        <line x1="21" y1="21" x2="27" y2="27" stroke="#D1D5DB" strokeWidth="2.5" strokeLinecap="round"/>
-                        <line x1="10" y1="10" x2="18" y2="18" stroke="#EF4444" strokeWidth="2.5" strokeLinecap="round"/>
-                        <line x1="18" y1="10" x2="10" y2="18" stroke="#EF4444" strokeWidth="2.5" strokeLinecap="round"/>
-                      </svg>
-                    </div>
-                  </div>
-                </div>
+              {/* Illustration — matches Figma sketch style */}
+              <div className="relative w-52 h-48 mx-auto mb-6 flex items-center justify-center">
+                <svg width="210" height="190" viewBox="0 0 210 190" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  {/* Back document (rotated, sketch style) */}
+                  <rect x="30" y="18" width="72" height="90" rx="6" stroke="#CBD5E1" strokeWidth="1.5" fill="white" transform="rotate(-8 30 18)"/>
+                  {/* Lines on back doc */}
+                  <line x1="38" y1="42" x2="76" y2="38" stroke="#E2E8F0" strokeWidth="2" strokeLinecap="round" transform="rotate(-8 38 42)"/>
+                  <line x1="38" y1="52" x2="68" y2="49" stroke="#E2E8F0" strokeWidth="2" strokeLinecap="round" transform="rotate(-8 38 52)"/>
+                  {/* Front document */}
+                  <rect x="52" y="10" width="74" height="96" rx="6" stroke="#CBD5E1" strokeWidth="1.5" fill="white"/>
+                  {/* Lines on front doc */}
+                  <line x1="62" y1="28" x2="116" y2="28" stroke="#E2E8F0" strokeWidth="2" strokeLinecap="round"/>
+                  <line x1="62" y1="38" x2="108" y2="38" stroke="#E2E8F0" strokeWidth="2" strokeLinecap="round"/>
+                  <line x1="62" y1="48" x2="112" y2="48" stroke="#E2E8F0" strokeWidth="2" strokeLinecap="round"/>
+                  <line x1="62" y1="58" x2="100" y2="58" stroke="#E2E8F0" strokeWidth="2" strokeLinecap="round"/>
+                  {/* Pencil / pen sketch stroke in top-left */}
+                  <path d="M18 30 Q22 22 28 28" stroke="#94A3B8" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+                  <line x1="16" y1="32" x2="20" y2="28" stroke="#94A3B8" strokeWidth="1.5" strokeLinecap="round"/>
+
+                  {/* Big magnifier */}
+                  <circle cx="118" cy="118" r="46" stroke="#C4C9D4" strokeWidth="3" fill="white"/>
+                  {/* Magnifier handle */}
+                  <line x1="154" y1="154" x2="176" y2="176" stroke="#C4C9D4" strokeWidth="5" strokeLinecap="round"/>
+                  {/* Red X inside magnifier */}
+                  <line x1="100" y1="100" x2="136" y2="136" stroke="#EF4444" strokeWidth="4" strokeLinecap="round"/>
+                  <line x1="136" y1="100" x2="100" y2="136" stroke="#EF4444" strokeWidth="4" strokeLinecap="round"/>
+
+                  {/* Sparkle dots */}
+                  <path d="M168 30 L170 24 L172 30 L178 32 L172 34 L170 40 L168 34 L162 32 Z" fill="#F59E0B" opacity="0.8"/>
+                  <circle cx="30" cy="148" r="3" fill="#94C5F8" opacity="0.7"/>
+                  <circle cx="185" cy="80" r="3.5" fill="#94A3B8" opacity="0.5"/>
+                  <path d="M50 160 L51.5 155 L53 160 L58 161.5 L53 163 L51.5 168 L50 163 L45 161.5 Z" fill="#F59E0B" opacity="0.6" transform="scale(0.6) translate(38 105)"/>
+                </svg>
               </div>
 
               <h2 className="text-[18px] font-bold text-[#1A1A2E] mb-2">No assignments yet</h2>
@@ -230,22 +235,18 @@ interface CardProps {
 
 function AssignmentCard({ assignment, isMenuOpen, onMenuToggle, onView, onDelete, formatDate }: CardProps) {
   return (
-    <div className="relative bg-white rounded-xl border border-[#E8ECF0] p-5 hover:border-[#C4B5FD]/60 hover:shadow-sm transition-all cursor-pointer" onClick={onView}>
-      {/* Title row */}
-      <div className="flex items-start justify-between mb-3">
-        <h3 className="text-[14px] font-semibold text-[#1A1A2E] line-clamp-2 flex-1 pr-2 leading-snug">
+    <div className="relative bg-white rounded-xl border border-[#E8ECF0] p-5 hover:shadow-sm transition-all cursor-pointer group" onClick={onView}>
+      {/* Title + three-dot */}
+      <div className="flex items-start justify-between mb-5">
+        <h3 className="text-[14px] font-bold text-[#1A1A2E] line-clamp-2 flex-1 pr-2 leading-snug">
           {assignment.title}
         </h3>
-        {/* Three-dot menu */}
-        <div
-          className="relative flex-shrink-0"
-          onClick={(e) => e.stopPropagation()}
-        >
+        <div className="relative flex-shrink-0" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={() => onMenuToggle(assignment._id)}
-            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[#F4F6F8] transition-colors"
+            className="w-7 h-7 flex items-center justify-center text-[#94A3B8] hover:text-[#5A6478] transition-colors"
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" className="text-[#94A3B8]">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
             </svg>
           </button>
@@ -256,10 +257,6 @@ function AssignmentCard({ assignment, isMenuOpen, onMenuToggle, onView, onDelete
                 onClick={() => { onMenuToggle(assignment._id); onView(); }}
                 className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-[#1A1A2E] hover:bg-[#F4F6F8] transition-colors text-left"
               >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                  <circle cx="12" cy="12" r="3"/>
-                </svg>
                 View Assignment
               </button>
               <div className="h-px bg-[#F4F6F8] mx-3" />
@@ -267,10 +264,6 @@ function AssignmentCard({ assignment, isMenuOpen, onMenuToggle, onView, onDelete
                 onClick={onDelete}
                 className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-[#EF4444] hover:bg-red-50 transition-colors text-left"
               >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="3 6 5 6 21 6"/>
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                </svg>
                 Delete
               </button>
             </div>
@@ -278,13 +271,10 @@ function AssignmentCard({ assignment, isMenuOpen, onMenuToggle, onView, onDelete
         </div>
       </div>
 
-      {/* Empty middle space (matches Figma minimal layout) */}
-      <div className="flex-1" />
-
-      {/* Date row */}
-      <div className="flex items-center justify-between text-[11px] text-[#94A3B8] pt-3 border-t border-[#F4F6F8] mt-4">
-        <span>Assigned on · <span className="font-medium text-[#5A6478]">{formatDate(assignment.createdAt)}</span></span>
-        <span>Due · <span className="font-medium text-[#5A6478]">{formatDate(assignment.dueDate)}</span></span>
+      {/* Bottom date row — matches Figma "Assigned on · date   Due · date" */}
+      <div className="flex items-center justify-between text-[12px] text-[#94A3B8]">
+        <span><span className="font-semibold text-[#5A6478]">Assigned on</span> · {formatDate(assignment.createdAt)}</span>
+        <span><span className="font-semibold text-[#5A6478]">Due</span> · {formatDate(assignment.dueDate)}</span>
       </div>
     </div>
   );
