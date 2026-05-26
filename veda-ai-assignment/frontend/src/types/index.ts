@@ -11,11 +11,8 @@ export interface QuestionTypeConfig {
   marks: number;
 }
 
+// Only fields actually shown in the create form (matching Figma)
 export interface AssignmentFormData {
-  title: string;
-  subject: string;
-  topic: string;
-  gradeLevel: string;
   dueDate: string;
   questionTypes: QuestionTypeConfig[];
   additionalInstructions: string;
@@ -68,16 +65,9 @@ export interface JobProgress {
 }
 
 export const QUESTION_TYPE_LABELS: Record<QuestionTypeName, string> = {
-  mcq: 'Multiple Choice (MCQ)',
-  short_answer: 'Short Answer',
-  long_answer: 'Long Answer',
-  true_false: 'True / False',
-  fill_blank: 'Fill in the Blank',
+  mcq:          'Multiple Choice Questions',
+  short_answer: 'Short Questions',
+  long_answer:  'Long Answer Questions',
+  true_false:   'True or False',
+  fill_blank:   'Fill in the Blanks',
 };
-
-export const GRADE_LEVELS = [
-  'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5',
-  'Grade 6', 'Grade 7', 'Grade 8', 'Grade 9', 'Grade 10',
-  'Grade 11', 'Grade 12',
-  'Undergraduate', 'Postgraduate',
-];

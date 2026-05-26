@@ -10,20 +10,15 @@ import {
 } from '@/types';
 
 interface AssignmentState {
-  // Form data
   formData: AssignmentFormData;
-  // Submission state
   isSubmitting: boolean;
   submitError: string | null;
-  // Job tracking
   currentJobId: string | null;
   currentAssignmentId: string | null;
   jobStatus: JobStatus | null;
   jobProgress: number;
-  // Generated paper
   questionPaper: QuestionPaper | null;
 
-  // Actions
   updateFormField: <K extends keyof AssignmentFormData>(
     key: K,
     value: AssignmentFormData[K]
@@ -41,10 +36,6 @@ interface AssignmentState {
 }
 
 const DEFAULT_FORM: AssignmentFormData = {
-  title: '',
-  subject: '',
-  topic: '',
-  gradeLevel: '',
   dueDate: '',
   questionTypes: [{ type: 'mcq', count: 5, marks: 2 }],
   additionalInstructions: '',

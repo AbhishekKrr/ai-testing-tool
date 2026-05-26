@@ -4,7 +4,7 @@ import { Assignment } from '../models/Assignment';
 import { QuestionPaperModel } from '../models/QuestionPaper';
 import { getGenerationQueue } from '../queues/generationQueue';
 import { getJobStatus, cacheGet } from '../services/cacheService';
-import { AssignmentInput, QuestionType } from '../types';
+import { QuestionType } from '../types';
 
 const router = Router();
 
@@ -16,18 +16,29 @@ const upload = multer({
     if (
       file.mimetype === 'text/plain' ||
       file.mimetype === 'application/pdf' ||
-      file.mimetype === 'application/octet-stream'
+      file.mimetype === 'application/octet-stream' ||
+      file.mimetype.startsWith('image/')
     ) {
       cb(null, true);
     } else {
-      cb(new Error('Only PDF and text files are supported'));
+      cb(new Error('Only PDF, text, and image files are supported'));
     }
   },
 });
 
+interface AssignmentBody {
+  title?: string;
+  subject?: string;
+  topic?: string;
+  gradeLevel?: string;
+  dueDate: string;
+  questionTypes: string | QuestionType[];
+  additionalInstructions?: string;
+}
+
 // POST /api/assignments — create assignment and queue generation job
 router.post('/', upload.single('file'), async (req: Request, res: Response) => {
-  const body = req.body as AssignmentInput & { questionTypes: string | QuestionType[] };
+  const body = req.body as AssignmentBody;
 
   // Parse questionTypes if sent as a JSON string (multipart/form-data)
   let questionTypes: QuestionType[];
@@ -42,11 +53,7 @@ router.post('/', upload.single('file'), async (req: Request, res: Response) => {
     questionTypes = body.questionTypes ?? [];
   }
 
-  // Validation
-  if (!body.title?.trim()) { res.status(400).json({ error: 'Title is required' }); return; }
-  if (!body.subject?.trim()) { res.status(400).json({ error: 'Subject is required' }); return; }
-  if (!body.topic?.trim()) { res.status(400).json({ error: 'Topic is required' }); return; }
-  if (!body.gradeLevel?.trim()) { res.status(400).json({ error: 'Grade level is required' }); return; }
+  // Validation — only hard requirements
   if (!body.dueDate) { res.status(400).json({ error: 'Due date is required' }); return; }
   if (!Array.isArray(questionTypes) || questionTypes.length === 0) {
     res.status(400).json({ error: 'At least one question type is required' });
@@ -62,19 +69,27 @@ router.post('/', upload.single('file'), async (req: Request, res: Response) => {
   // Extract text from uploaded file
   let fileContent: string | undefined;
   if (req.file) {
-    fileContent = req.file.buffer.toString('utf-8').slice(0, 5000);
+    // Only extract text from text/PDF files; skip binary (images)
+    if (
+      req.file.mimetype === 'text/plain' ||
+      req.file.mimetype === 'application/pdf' ||
+      req.file.mimetype === 'application/octet-stream'
+    ) {
+      fileContent = req.file.buffer.toString('utf-8').slice(0, 5000);
+    }
   }
 
   // Compute total marks
   const totalMarks = questionTypes.reduce((sum, qt) => sum + qt.count * qt.marks, 0);
 
-  // Create assignment
+  // Create assignment — title/subject/topic/gradeLevel are optional and will be
+  // updated by the worker after AI generation completes
   const assignment = await Assignment.create({
-    title: body.title.trim(),
-    subject: body.subject.trim(),
-    topic: body.topic.trim(),
-    gradeLevel: body.gradeLevel.trim(),
-    dueDate: body.dueDate,
+    title:      body.title?.trim() || 'Generating…',
+    subject:    body.subject?.trim() || '',
+    topic:      body.topic?.trim() || '',
+    gradeLevel: body.gradeLevel?.trim() || '',
+    dueDate:    body.dueDate,
     questionTypes,
     totalMarks,
     additionalInstructions: body.additionalInstructions?.trim(),

@@ -6,51 +6,59 @@ const { v4: uuidv4 } = require('uuid') as { v4: () => string };
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const TYPE_LABELS: Record<QuestionType['type'], string> = {
-  mcq: 'Multiple Choice Questions',
+  mcq:          'Multiple Choice Questions',
   short_answer: 'Short Answer Questions',
-  long_answer: 'Long Answer Questions',
-  true_false: 'True/False Questions',
-  fill_blank: 'Fill in the Blank Questions',
+  long_answer:  'Long Answer Questions',
+  true_false:   'True/False Questions',
+  fill_blank:   'Fill in the Blank Questions',
 };
 
 const SECTION_LABELS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
 const TYPE_INSTRUCTIONS: Record<QuestionType['type'], string> = {
-  mcq: 'Attempt all questions. Choose the best answer.',
-  short_answer: 'Attempt all questions. Answer in 2-3 sentences.',
-  long_answer: 'Attempt all questions. Answer in detail.',
-  true_false: 'State whether the following statements are True or False.',
-  fill_blank: 'Fill in the blanks with appropriate words.',
+  mcq:          'Attempt all questions. Choose the best answer from the options given.',
+  short_answer: 'Attempt all questions. Answer in 2–3 sentences.',
+  long_answer:  'Attempt all questions. Answer in detail with examples.',
+  true_false:   'State whether the following statements are True or False.',
+  fill_blank:   'Fill in the blanks with the most appropriate word or phrase.',
 };
 
 function buildPrompt(input: AssignmentInput): string {
-  const sections = input.questionTypes.map((qt, i) => {
-    return `Section ${SECTION_LABELS[i]} – ${TYPE_LABELS[qt.type]}: ${qt.count} questions, ${qt.marks} marks each`;
-  });
+  const sections = input.questionTypes.map((qt, i) =>
+    `Section ${SECTION_LABELS[i]} – ${TYPE_LABELS[qt.type]}: ${qt.count} question${qt.count > 1 ? 's' : ''}, ${qt.marks} mark${qt.marks > 1 ? 's' : ''} each`
+  );
 
-  return `You are an expert educator creating a formal examination question paper.
+  // Build context from whatever is available
+  const contextLines: string[] = [];
+  if (input.subject)    contextLines.push(`Subject: ${input.subject}`);
+  if (input.topic)      contextLines.push(`Topic/Chapter: ${input.topic}`);
+  if (input.gradeLevel) contextLines.push(`Grade/Class: ${input.gradeLevel}`);
+  if (input.additionalInstructions) contextLines.push(`Teacher's Instructions: ${input.additionalInstructions}`);
+  if (input.fileContent) contextLines.push(`Reference Material (extract):\n${input.fileContent.slice(0, 3000)}`);
 
-Assignment Details:
-- Title: ${input.title}
-- Subject: ${input.subject}
-- Topic: ${input.topic}
-- Grade Level: ${input.gradeLevel}
-- Total Marks: ${input.totalMarks}
-${input.additionalInstructions ? `- Special Instructions: ${input.additionalInstructions}` : ''}
-${input.fileContent ? `- Reference Material:\n${input.fileContent.slice(0, 3000)}` : ''}
+  const contextStr = contextLines.length > 0
+    ? contextLines.join('\n')
+    : 'Create a comprehensive and educationally appropriate question paper. Determine a suitable subject and grade level.';
+
+  return `You are an expert educator creating a formal examination question paper for Indian school students (CBSE/ICSE/State Board).
+
+Context provided by the teacher:
+${contextStr}
+
+Total Marks: ${input.totalMarks}
 
 Generate the following sections:
 ${sections.join('\n')}
 
-CRITICAL: Return ONLY valid JSON. No markdown, no explanation, no code blocks.
+CRITICAL: Return ONLY valid JSON — no markdown, no explanation, no code blocks.
 The JSON must strictly follow this schema:
 
 {
-  "title": "string (exam paper title)",
-  "subject": "string",
-  "gradeLevel": "string",
+  "title": "string — descriptive title, e.g. 'Quiz on Electricity – Grade 8 Science'",
+  "subject": "string — infer from context if not stated, e.g. 'Science', 'Mathematics'",
+  "gradeLevel": "string — infer from context if not stated, e.g. 'Grade 8', 'Class 10'",
   "totalMarks": number,
-  "duration": "string (e.g., '2 hours')",
+  "duration": "string — e.g. '45 minutes', '1 hour', '3 hours'",
   "sections": [
     {
       "title": "Section A",
@@ -59,26 +67,27 @@ The JSON must strictly follow this schema:
       "totalMarks": number,
       "questions": [
         {
-          "text": "string (the full question text)",
+          "text": "string — the full question text",
           "difficulty": "easy|medium|hard",
           "marks": number,
-          "options": ["A. ...", "B. ...", "C. ...", "D. ..."],  // only for mcq
-          "answer": "string (model answer, optional)"
+          "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
+          "answer": "string — correct/model answer (required for every question)"
         }
       ]
     }
   ]
 }
 
-Rules:
-1. Questions must be relevant to the topic: "${input.topic}"
-2. Vary difficulty (mix of easy/medium/hard) realistically
-3. MCQ must have exactly 4 options labeled A, B, C, D
-4. True/False questions should have "answer" as "True" or "False"
-5. Fill-in-blank questions should use underscores (___) in text
-6. Marks per question must match the specified marks
-7. Do NOT include section labels in question text
-8. Return ONLY the JSON object`;
+Rules (strictly enforce):
+1. Every single question MUST have an "answer" field with the correct answer
+2. Vary difficulty: mix easy / medium / hard across questions
+3. MCQ: exactly 4 options labeled A, B, C, D; "answer" must be the letter only (e.g. "A")
+4. True/False: "answer" must be exactly "True" or "False"
+5. Fill-in-blank: use underscores (___) in the question text for the blank
+6. Each question's marks must match the section's specified marks per question
+7. Questions must be factually accurate and educationally appropriate
+8. Do NOT wrap JSON in markdown code fences
+9. Return ONLY the JSON object, nothing else`;
 }
 
 interface RawQuestion {
@@ -158,7 +167,7 @@ export async function generateQuestionPaper(
     throw new Error('Unexpected response type from AI');
   }
 
-  // Extract JSON from the response (strip any accidental markdown wrapping)
+  // Strip any accidental markdown wrapping
   let jsonText = content.text.trim();
   const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
   if (jsonMatch) {

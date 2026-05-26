@@ -27,12 +27,7 @@ async function processJob(job: Job<GenerationJobData>): Promise<void> {
   // Update status: processing
   await Promise.all([
     Assignment.findByIdAndUpdate(assignmentId, { status: 'processing', jobId }),
-    setJobStatus(jobId, {
-      jobId,
-      assignmentId,
-      status: 'processing',
-      progress: 10,
-    }),
+    setJobStatus(jobId, { jobId, assignmentId, status: 'processing', progress: 10 }),
   ]);
 
   emit('job:progress', { jobId, assignmentId, status: 'processing', progress: 10 });
@@ -49,15 +44,15 @@ async function processJob(job: Job<GenerationJobData>): Promise<void> {
   // Generate question paper via AI
   const questionPaper = await generateQuestionPaper(
     {
-      title: assignment.title,
-      subject: assignment.subject,
-      topic: assignment.topic,
-      gradeLevel: assignment.gradeLevel,
-      dueDate: assignment.dueDate,
-      questionTypes: assignment.questionTypes,
-      totalMarks: assignment.totalMarks,
-      additionalInstructions: assignment.additionalInstructions,
-      fileContent: assignment.fileContent,
+      title:                   assignment.title,
+      subject:                 assignment.subject,
+      topic:                   assignment.topic,
+      gradeLevel:              assignment.gradeLevel,
+      dueDate:                 assignment.dueDate,
+      questionTypes:           assignment.questionTypes,
+      totalMarks:              assignment.totalMarks,
+      additionalInstructions:  assignment.additionalInstructions,
+      fileContent:             assignment.fileContent,
     },
     assignmentId
   );
@@ -68,8 +63,13 @@ async function processJob(job: Job<GenerationJobData>): Promise<void> {
   // Store question paper
   const saved = await QuestionPaperModel.create(questionPaper);
 
-  // Update assignment status
-  await Assignment.findByIdAndUpdate(assignmentId, { status: 'completed' });
+  // Back-fill assignment with AI-determined title / subject / gradeLevel
+  await Assignment.findByIdAndUpdate(assignmentId, {
+    status:     'completed',
+    title:      questionPaper.title      || assignment.title,
+    subject:    questionPaper.subject    || assignment.subject,
+    gradeLevel: questionPaper.gradeLevel || assignment.gradeLevel,
+  });
 
   // Update job status in cache
   await setJobStatus(jobId, {

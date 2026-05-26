@@ -5,15 +5,15 @@ export interface QuestionType {
 }
 
 export interface AssignmentInput {
-  title: string;
-  subject: string;
-  topic: string;
-  gradeLevel: string;
+  title?: string;          // optional — derived from AI paper title if blank
+  subject?: string;        // optional — AI infers from context
+  topic?: string;          // optional — AI infers from context
+  gradeLevel?: string;     // optional — AI infers from context
   dueDate: string;
   questionTypes: QuestionType[];
   totalMarks: number;
   additionalInstructions?: string;
-  fileContent?: string; // extracted text from uploaded PDF/txt
+  fileContent?: string;
 }
 
 export interface Question {
@@ -23,7 +23,7 @@ export interface Question {
   difficulty: 'easy' | 'medium' | 'hard';
   marks: number;
   options?: string[]; // for MCQ
-  answer?: string;    // optional model answer
+  answer?: string;    // model answer
 }
 
 export interface Section {

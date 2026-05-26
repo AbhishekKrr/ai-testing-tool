@@ -20,11 +20,11 @@ const QuestionTypeSchema = new Schema<QuestionType>({
 
 const AssignmentSchema = new Schema<IAssignment>(
   {
-    title: { type: String, required: true, trim: true },
-    subject: { type: String, required: true, trim: true },
-    topic: { type: String, required: true, trim: true },
-    gradeLevel: { type: String, required: true, trim: true },
-    dueDate: { type: String, required: true },
+    title:      { type: String, trim: true, default: 'Untitled Assignment' },
+    subject:    { type: String, trim: true, default: '' },
+    topic:      { type: String, trim: true, default: '' },
+    gradeLevel: { type: String, trim: true, default: '' },
+    dueDate:    { type: String, required: true },
     questionTypes: { type: [QuestionTypeSchema], required: true },
     totalMarks: { type: Number, required: true, min: 1 },
     additionalInstructions: { type: String },
