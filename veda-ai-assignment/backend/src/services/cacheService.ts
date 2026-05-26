@@ -4,9 +4,12 @@ let redis: Redis | null = null;
 
 export function getRedis(): Redis {
   if (!redis) {
-    redis = new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379', {
+    const redisUrl = process.env.REDIS_URL ?? 'redis://localhost:6379';
+    const isTLS = redisUrl.startsWith('rediss://');
+    redis = new Redis(redisUrl, {
       maxRetriesPerRequest: null, // required by BullMQ
       lazyConnect: true,
+      ...(isTLS ? { tls: {} } : {}),
     });
     redis.on('error', (err) => {
       console.error('[Redis] Connection error:', err.message);

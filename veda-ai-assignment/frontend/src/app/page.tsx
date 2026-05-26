@@ -1,5 +1,7 @@
-import { redirect } from 'next/navigation';
+import HomeDashboard from './HomeDashboard';
+
+export const metadata = { title: 'Home – VedaAI' };
 
 export default function RootPage() {
-  redirect('/assignments');
+  return <HomeDashboard />;
 }

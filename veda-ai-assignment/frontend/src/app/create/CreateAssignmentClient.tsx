@@ -9,29 +9,62 @@ import { QuestionTypeName, QUESTION_TYPE_LABELS, QuestionTypeConfig } from '@/ty
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:4000';
 
 const QUESTION_TYPE_OPTIONS: QuestionTypeName[] = [
-  'mcq',
-  'short_answer',
-  'long_answer',
-  'true_false',
-  'fill_blank',
+  'mcq', 'short_answer', 'long_answer', 'true_false', 'fill_blank',
 ];
 
+/* ── Exact Figma tokens ──────────────────────────────── */
+const C_PRIMARY   = '#303030';
+const C_MUTED     = 'rgba(94, 94, 94, 0.8)';
+const C_MUTED55   = 'rgba(94, 94, 94, 0.55)';
+const C_DISABLED  = '#A9A9A9';
+const C_BORDER    = '#DADADA';
+const FONT        = 'var(--font-bricolage)';
+
+/* ── CountStepper ─────────────────────────────────────── */
+function CountStepper({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  return (
+    <div style={{
+      width: '100px', height: '44px', flexShrink: 0,
+      padding: '11px 8px',
+      background: '#FFFFFF',
+      borderRadius: '100px',
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    }}>
+      <button
+        type="button"
+        onClick={() => onChange(Math.max(1, value - 1))}
+        style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '16px', height: '16px', padding: 0 }}
+      >
+        <svg width="10" height="2" viewBox="0 0 10 2" fill="none">
+          <path d="M0 1H10" stroke={C_BORDER} strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      </button>
+      <span style={{ fontFamily: FONT, fontWeight: 500, fontSize: '16px', lineHeight: '140%', letterSpacing: '-0.04em', color: C_PRIMARY }}>
+        {value}
+      </span>
+      <button
+        type="button"
+        onClick={() => onChange(value + 1)}
+        style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '16px', height: '16px', padding: 0 }}
+      >
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+          <path d="M5 0V10M0 5H10" stroke={C_BORDER} strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+/* ── Main Component ───────────────────────────────────── */
 export default function CreateAssignmentClient() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState('');
 
   const {
-    formData,
-    isSubmitting,
-    submitError,
-    updateFormField,
-    addQuestionType,
-    updateQuestionType,
-    removeQuestionType,
-    setSubmitting,
-    setSubmitError,
-    setJobInfo,
+    formData, isSubmitting, submitError,
+    updateFormField, addQuestionType, updateQuestionType,
+    removeQuestionType, setSubmitting, setSubmitError, setJobInfo,
   } = useAssignmentStore();
 
   const totalQuestions = formData.questionTypes.reduce((s, q) => s + q.count, 0);
@@ -42,22 +75,16 @@ export default function CreateAssignmentClient() {
     updateFormField('file', f);
     setFileName(f ? f.name : '');
   }
-
   function handleDrop(e: React.DragEvent<HTMLDivElement>) {
     e.preventDefault();
     const f = e.dataTransfer.files?.[0] ?? null;
-    if (f) {
-      updateFormField('file', f);
-      setFileName(f.name);
-    }
+    if (f) { updateFormField('file', f); setFileName(f.name); }
   }
-
   function addQuestionTypeRow() {
     const used = new Set(formData.questionTypes.map((q) => q.type));
     const next = QUESTION_TYPE_OPTIONS.find((t) => !used.has(t));
     if (next) addQuestionType({ type: next, count: 5, marks: 5 });
   }
-
   function validateForm(): string | null {
     if (!formData.dueDate) return 'Due date is required';
     if (formData.questionTypes.length === 0) return 'Add at least one question type';
@@ -67,120 +94,152 @@ export default function CreateAssignmentClient() {
     }
     return null;
   }
-
   async function handleSubmit() {
     const err = validateForm();
     if (err) { setSubmitError(err); return; }
-    setSubmitting(true);
-    setSubmitError(null);
-
+    setSubmitting(true); setSubmitError(null);
     try {
       const fd = new FormData();
       fd.append('dueDate', formData.dueDate);
       fd.append('questionTypes', JSON.stringify(formData.questionTypes));
-      if (formData.additionalInstructions.trim()) {
-        fd.append('additionalInstructions', formData.additionalInstructions.trim());
-      }
+      if (formData.additionalInstructions.trim()) fd.append('additionalInstructions', formData.additionalInstructions.trim());
       if (formData.file) fd.append('file', formData.file);
-
-      const res = await fetch(`${BACKEND_URL}/api/assignments`, {
-        method: 'POST', body: fd,
-      });
+      const res  = await fetch(`${BACKEND_URL}/api/assignments`, { method: 'POST', body: fd });
       const data = await res.json() as { assignmentId: string; jobId: string; error?: string };
-
       if (!res.ok) { setSubmitError(data.error ?? 'Failed to create'); return; }
       setJobInfo(data.jobId, data.assignmentId);
       router.push(`/results/${data.assignmentId}`);
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : 'Network error');
-    } finally {
-      setSubmitting(false);
-    }
+    } finally { setSubmitting(false); }
   }
 
   return (
-    <AppShell breadcrumb="Assignment">
-      <div className="max-w-2xl mx-auto px-6 py-6">
+    <AppShell>
+      <div style={{ padding: '32px 32px 48px', width: '100%', maxWidth: '900px', margin: '0 auto' }}>
 
-        {/* Page title */}
-        <div className="flex items-center gap-2 mb-0.5">
-          <span className="w-2 h-2 rounded-full bg-[#22C55E] flex-shrink-0" />
-          <h1 className="text-[20px] font-bold text-[#1A1A2E]">Create Assignment</h1>
+        {/* ── Page header ── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px', marginBottom: '0px' }}>
+          {/* Live green dot */}
+          <div style={{
+            width: '12px', height: '12px', flexShrink: 0,
+            background: '#4BC26D',
+            border: '4px solid rgba(75, 194, 109, 0.4)',
+            borderRadius: '50%',
+            boxShadow: '0px 16px 48px rgba(0,0,0,0.12)',
+          }} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <span style={{ fontFamily: FONT, fontWeight: 700, fontSize: '20px', lineHeight: '140%', letterSpacing: '-0.04em', color: C_PRIMARY }}>
+              Create Assignment
+            </span>
+            <span style={{ fontFamily: FONT, fontWeight: 400, fontSize: '14px', lineHeight: '140%', letterSpacing: '-0.04em', color: C_MUTED55 }}>
+              Set up a new assignment for your students
+            </span>
+          </div>
         </div>
-        <p className="text-[13px] text-[#94A3B8] mb-5">Set up a new assignment for your students</p>
 
-        {/* Step progress bar — dark thin line, matches Figma */}
-        <div className="w-full h-[3px] bg-[#E8ECF0] mb-6 overflow-hidden">
-          <div className="h-full bg-[#1A1A2E]" style={{ width: '50%' }} />
+        {/* ── Step indicator — two thick lines ── */}
+        <div style={{ display: 'flex', width: '100%', margin: '16px 0 24px' }}>
+          <div style={{ flex: 1, borderTop: '5px solid #5E5E5E', borderRadius: '2px 0 0 2px' }} />
+          <div style={{ flex: 1, borderTop: '5px solid #DADADA', borderRadius: '0 2px 2px 0' }} />
         </div>
 
-        {/* Card */}
-        <div className="bg-white rounded-2xl border border-[#E8ECF0] overflow-hidden">
-          <div className="px-6 pt-5 pb-3 border-b border-[#F4F6F8]">
-            <h2 className="text-[15px] font-semibold text-[#1A1A2E]">Assignment Details</h2>
-            <p className="text-[12px] text-[#94A3B8]">Basic information about your assignment.</p>
+        {/* ── Form card ── */}
+        <div style={{
+          background: 'rgba(255, 255, 255, 0.5)',
+          borderRadius: '32px',
+          padding: '32px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '32px',
+        }}>
+
+          {/* Section header */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <span style={{ fontFamily: FONT, fontWeight: 700, fontSize: '20px', lineHeight: '140%', letterSpacing: '-0.04em', color: C_PRIMARY }}>
+              Assignment Details
+            </span>
+            <span style={{ fontFamily: FONT, fontWeight: 400, fontSize: '14px', lineHeight: '140%', letterSpacing: '-0.04em', color: C_MUTED }}>
+              Basic information about your assignment
+            </span>
           </div>
 
-          <div className="px-6 py-5 space-y-5">
+          {/* ── Form fields ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-            {/* ── File Upload ── */}
-            <div>
+            {/* File Upload */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                className="border border-dashed border-[#CBD5E1] rounded-xl py-10 text-center cursor-pointer hover:border-[#7C3AED]/40 hover:bg-[#F9F8FF] transition-colors bg-white"
+                style={{
+                  width: '100%', background: '#FFFFFF',
+                  border: '1.75px dashed rgba(0, 0, 0, 0.2)',
+                  borderRadius: '24px',
+                  padding: '24px 32px',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px',
+                  cursor: 'pointer',
+                }}
               >
-                <div className="flex flex-col items-center gap-2.5">
-                  {/* Upload cloud icon */}
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                {/* Cloud icon in white square */}
+                <div style={{ width: '40px', height: '40px', background: '#FFFFFF', borderRadius: '8px', boxShadow: '0 1px 6px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1E1E1E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="16 16 12 12 8 16"/>
                     <line x1="12" y1="12" x2="12" y2="21"/>
                     <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
                   </svg>
-                  <div>
-                    <p className="text-[13px] text-[#5A6478] font-medium">
-                      {fileName || 'Choose a file or drag & drop it here'}
-                    </p>
-                    <p className="text-[11px] text-[#94A3B8] mt-0.5">JPEG, PNG, upto 10MB</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-                    className="mt-1 text-[12px] font-medium text-[#5A6478] border border-[#CBD5E1] rounded-lg px-5 py-1.5 hover:bg-[#F4F6F8] transition-colors bg-white"
-                  >
-                    Browse Files
-                  </button>
                 </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%', textAlign: 'center' }}>
+                  <span style={{ fontFamily: FONT, fontWeight: 500, fontSize: '16px', lineHeight: '140%', letterSpacing: '-0.04em', color: C_PRIMARY }}>
+                    {fileName || 'Choose a file or drag & drop it here'}
+                  </span>
+                  <span style={{ fontFamily: FONT, fontWeight: 400, fontSize: '14px', lineHeight: '140%', letterSpacing: '-0.04em', color: C_DISABLED }}>
+                    JPEG, PNG, upto 10MB
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                  style={{ padding: '8px 24px', background: '#F6F6F6', borderRadius: '48px', border: 'none', cursor: 'pointer', fontFamily: FONT, fontWeight: 500, fontSize: '14px', letterSpacing: '-0.04em', color: C_PRIMARY }}
+                >
+                  Browse Files
+                </button>
               </div>
-              <p className="text-[11px] text-[#94A3B8] mt-1.5">
+
+              <span style={{ fontFamily: FONT, fontWeight: 500, fontSize: '16px', lineHeight: '140%', letterSpacing: '-0.04em', color: 'rgba(48, 48, 48, 0.6)' }}>
                 Upload images of your preferred document/image
-              </p>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*,.pdf,.txt"
-                onChange={handleFileChange}
-                className="hidden"
-              />
+              </span>
+              <input ref={fileInputRef} type="file" accept="image/*,.pdf,.txt" onChange={handleFileChange} className="hidden" />
             </div>
 
-            {/* ── Due Date ── */}
-            <div>
-              <label className="block text-[12px] font-semibold text-[#1A1A2E] mb-1.5">
+            {/* Due Date */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+              <span style={{ fontFamily: FONT, fontWeight: 700, fontSize: '16px', lineHeight: '140%', letterSpacing: '-0.04em', color: C_PRIMARY }}>
                 Due Date
-              </label>
-              <div className="relative">
+              </span>
+              <div style={{ position: 'relative' }}>
                 <input
                   type="date"
                   value={formData.dueDate}
                   min={new Date().toISOString().split('T')[0]}
                   onChange={(e) => updateFormField('dueDate', e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-[#E8ECF0] text-[13px] text-[#1A1A2E] focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/20 focus:border-[#7C3AED] transition bg-white appearance-none"
-                  placeholder="DD-MM-YYYY"
+                  style={{
+                    width: '100%', height: '44px',
+                    padding: '11px 48px 11px 16px',
+                    border: `1.25px solid ${C_BORDER}`,
+                    borderRadius: '100px',
+                    background: 'transparent',
+                    fontFamily: FONT, fontWeight: 500, fontSize: '16px', letterSpacing: '-0.04em',
+                    color: formData.dueDate ? C_PRIMARY : C_DISABLED,
+                    outline: 'none', appearance: 'none', boxSizing: 'border-box',
+                  }}
                 />
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2B2B2B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                  style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                  <rect x="3" y="4" width="18" height="18" rx="2"/>
                   <line x1="16" y1="2" x2="16" y2="6"/>
                   <line x1="8" y1="2" x2="8" y2="6"/>
                   <line x1="3" y1="10" x2="21" y2="10"/>
@@ -188,214 +247,200 @@ export default function CreateAssignmentClient() {
               </div>
             </div>
 
-            {/* ── Question Type ── */}
-            <div>
-              {/* Column headers */}
-              <div className="flex items-center mb-2">
-                <span className="text-[12px] font-semibold text-[#1A1A2E] flex-1">Question Type</span>
-                <span className="text-[11px] text-[#94A3B8] w-28 text-center">No. of Questions</span>
-                <span className="text-[11px] text-[#94A3B8] w-20 text-center">Marks</span>
-                <span className="w-5" /> {/* spacer for remove × */}
-              </div>
+            {/* Question Type + Counters */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', gap: '32px' }}>
 
-              <div className="space-y-2">
-                {formData.questionTypes.map((qt, idx) => (
-                  <QuestionTypeRow
-                    key={idx}
-                    qt={qt}
-                    usedTypes={formData.questionTypes.map((q) => q.type)}
-                    onUpdate={(updated) => updateQuestionType(idx, updated)}
-                    onRemove={() => removeQuestionType(idx)}
-                    canRemove={formData.questionTypes.length > 1}
-                  />
-                ))}
-              </div>
+                {/* LEFT — type pills */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px', minWidth: 0 }}>
+                  <span style={{ fontFamily: FONT, fontWeight: 700, fontSize: '16px', lineHeight: '140%', letterSpacing: '-0.04em', color: C_PRIMARY, height: '22px', display: 'flex', alignItems: 'center' }}>
+                    Question Type
+                  </span>
 
-              {/* Add Question Type */}
-              <button
-                type="button"
-                onClick={addQuestionTypeRow}
-                disabled={formData.questionTypes.length >= QUESTION_TYPE_OPTIONS.length}
-                className="mt-3 flex items-center gap-1.5 text-[13px] font-medium text-[#1A1A2E] hover:text-[#7C3AED] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                <div className="w-5 h-5 rounded-full border-2 border-current flex items-center justify-center flex-shrink-0">
-                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                  </svg>
+                  {formData.questionTypes.map((qt, idx) => {
+                    const available = QUESTION_TYPE_OPTIONS.filter(
+                      (t) => t === qt.type || !formData.questionTypes.map((q) => q.type).includes(t)
+                    );
+                    return (
+                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', height: '44px' }}>
+                        <div style={{ flex: 1, position: 'relative', height: '44px' }}>
+                          <select
+                            value={qt.type}
+                            onChange={(e) => updateQuestionType(idx, { ...qt, type: e.target.value as QuestionTypeName })}
+                            style={{
+                              width: '100%', height: '44px',
+                              padding: '11px 36px 11px 16px',
+                              background: '#FFFFFF', borderRadius: '100px', border: 'none',
+                              fontFamily: FONT, fontWeight: 500, fontSize: '16px', letterSpacing: '-0.04em', color: C_PRIMARY,
+                              appearance: 'none', cursor: 'pointer', outline: 'none',
+                            }}
+                          >
+                            {available.map((t) => (
+                              <option key={t} value={t}>{QUESTION_TYPE_LABELS[t]}</option>
+                            ))}
+                          </select>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C_PRIMARY} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
+                            style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                            <polyline points="6 9 12 15 18 9"/>
+                          </svg>
+                        </div>
+                        {formData.questionTypes.length > 1 ? (
+                          <button type="button" onClick={() => removeQuestionType(idx)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '16px', height: '16px', flexShrink: 0, color: C_PRIMARY }}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                          </button>
+                        ) : <div style={{ width: '16px', flexShrink: 0 }} />}
+                      </div>
+                    );
+                  })}
+
+                  {/* Add Question Type */}
+                  {formData.questionTypes.length < QUESTION_TYPE_OPTIONS.length && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', height: '36px' }}>
+                      <button type="button" onClick={addQuestionTypeRow}
+                        style={{ width: '36px', height: '36px', background: '#2B2B2B', borderRadius: '48px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                      </button>
+                      <span style={{ fontFamily: FONT, fontWeight: 700, fontSize: '14px', lineHeight: '140%', letterSpacing: '-0.04em', color: C_PRIMARY }}>
+                        Add Question Type
+                      </span>
+                    </div>
+                  )}
                 </div>
-                Add Question Type
-              </button>
 
-              {/* Totals — stacked, right-aligned */}
-              <div className="mt-4 flex flex-col items-end gap-0.5 text-[12px]">
-                <span className="text-[#5A6478]">
-                  Total Questions : <strong className="text-[#1A1A2E]">{totalQuestions}</strong>
+                {/* RIGHT — No. of Questions + Marks columns */}
+                <div style={{ display: 'flex', gap: '16px', flexShrink: 0 }}>
+                  {/* No. of Questions */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                    <span style={{ fontFamily: FONT, fontWeight: 500, fontSize: '16px', lineHeight: '140%', letterSpacing: '-0.04em', color: C_PRIMARY, height: '22px', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}>
+                      No. of Questions
+                    </span>
+                    {formData.questionTypes.map((qt, idx) => (
+                      <CountStepper key={idx} value={qt.count} onChange={(v) => updateQuestionType(idx, { ...qt, count: v })} />
+                    ))}
+                  </div>
+
+                  {/* Marks */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                    <span style={{ fontFamily: FONT, fontWeight: 500, fontSize: '16px', lineHeight: '140%', letterSpacing: '-0.04em', color: C_PRIMARY, height: '22px', display: 'flex', alignItems: 'center' }}>
+                      Marks
+                    </span>
+                    {formData.questionTypes.map((qt, idx) => (
+                      <CountStepper key={idx} value={qt.marks} onChange={(v) => updateQuestionType(idx, { ...qt, marks: v })} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Totals */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <span style={{ fontFamily: FONT, fontWeight: 500, fontSize: '16px', lineHeight: '110%', letterSpacing: '-0.04em', color: C_PRIMARY }}>
+                  Total Questions : {totalQuestions}
                 </span>
-                <span className="text-[#5A6478]">
-                  Total Marks : <strong className="text-[#1A1A2E]">{totalMarks}</strong>
+                <span style={{ fontFamily: FONT, fontWeight: 500, fontSize: '16px', lineHeight: '110%', letterSpacing: '-0.04em', color: C_PRIMARY }}>
+                  Total Marks : {totalMarks}
                 </span>
               </div>
             </div>
 
-            {/* ── Additional Information ── */}
-            <div>
-              <label className="block text-[12px] font-semibold text-[#1A1A2E] mb-1.5">
+            {/* Additional Information */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <span style={{ fontFamily: FONT, fontWeight: 700, fontSize: '16px', lineHeight: '140%', letterSpacing: '-0.04em', color: C_PRIMARY }}>
                 Additional Information{' '}
-                <span className="font-normal text-[#94A3B8]">(For better output)</span>
-              </label>
-              <div className="relative">
+                <span style={{ fontWeight: 400, color: C_MUTED }}>(For better output)</span>
+              </span>
+              <div style={{
+                position: 'relative',
+                padding: '16px',
+                background: 'rgba(255, 255, 255, 0.25)',
+                border: `1.25px dashed ${C_BORDER}`,
+                borderRadius: '16px',
+                display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+                minHeight: '102px',
+              }}>
                 <textarea
                   value={formData.additionalInstructions}
                   onChange={(e) => updateFormField('additionalInstructions', e.target.value)}
-                  rows={4}
+                  rows={3}
                   placeholder="e.g Generate a question paper for 3 hour exam duration..."
-                  className="w-full px-3 py-2.5 pr-8 rounded-xl border border-[#E8ECF0] text-[13px] text-[#1A1A2E] placeholder:text-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/20 focus:border-[#7C3AED] resize-none transition"
+                  style={{
+                    width: '100%', border: 'none', background: 'transparent',
+                    resize: 'none', outline: 'none',
+                    fontFamily: FONT, fontWeight: 500, fontSize: '14px', lineHeight: '140%', letterSpacing: '-0.04em',
+                    color: 'rgba(48, 48, 48, 0.6)',
+                  }}
                 />
-                {/* mic icon */}
-                <button className="absolute right-3 bottom-3 text-[#94A3B8] hover:text-[#7C3AED] transition-colors">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                    <line x1="12" y1="19" x2="12" y2="23"/>
-                    <line x1="8" y1="23" x2="16" y2="23"/>
-                  </svg>
-                </button>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+                  <button type="button" style={{ width: '36px', height: '36px', background: '#F0F0F0', borderRadius: '50%', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C_PRIMARY} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                      <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                      <line x1="12" y1="19" x2="12" y2="23"/>
+                      <line x1="8" y1="23" x2="16" y2="23"/>
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
-
           </div>
-        </div>
 
-        {/* Error */}
-        {submitError && (
-          <div className="mt-4 flex items-center gap-2.5 p-3.5 bg-red-50 border border-red-200 rounded-xl text-[13px] text-red-700">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="flex-shrink-0">
-              <path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-1.72 6.97a.75.75 0 1 0-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 1 0 1.06 1.06L12 13.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L13.06 12l1.72-1.72a.75.75 0 1 0-1.06-1.06L12 10.94l-1.72-1.72Z" clipRule="evenodd" />
-            </svg>
-            {submitError}
-          </div>
-        )}
+          {/* Error */}
+          {submitError && (
+            <div style={{ padding: '12px 16px', background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '16px', fontFamily: FONT, fontSize: '14px', color: '#EF4444', letterSpacing: '-0.04em' }}>
+              {submitError}
+            </div>
+          )}
 
-        {/* Navigation buttons */}
-        <div className="flex items-center justify-between mt-6">
-          <button
-            onClick={() => router.back()}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl border border-[#E8ECF0] bg-white text-[13px] font-medium text-[#5A6478] hover:bg-[#F4F6F8] transition-colors"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
-            </svg>
-            Previous
-          </button>
-          <button
-            onClick={() => void handleSubmit()}
-            disabled={isSubmitting}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#1A1A2E] text-white text-[13px] font-semibold hover:bg-[#2a2a4e] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-          >
-            {isSubmitting ? (
-              <>
-                <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                </svg>
-                Generating…
-              </>
-            ) : (
-              <>
-                Next
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          {/* Navigation buttons */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <button
+              type="button"
+              onClick={() => router.back()}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '4px',
+                padding: '12px 24px', height: '46px',
+                background: '#FFFFFF', borderRadius: '48px', border: 'none', cursor: 'pointer',
+                fontFamily: FONT, fontWeight: 500, fontSize: '16px', letterSpacing: '-0.04em', color: C_PRIMARY,
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C_PRIMARY} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+              </svg>
+              Previous
+            </button>
+
+            <button
+              type="button"
+              onClick={() => void handleSubmit()}
+              disabled={isSubmitting}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '4px',
+                padding: '12px 24px', height: '46px',
+                background: isSubmitting ? '#555' : '#181818',
+                borderRadius: '48px', border: 'none',
+                cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                fontFamily: FONT, fontWeight: 500, fontSize: '16px', letterSpacing: '-0.04em', color: '#FFFFFF',
+                opacity: isSubmitting ? 0.7 : 1,
+              }}
+            >
+              {isSubmitting ? 'Generating…' : 'Continue'}
+              {!isSubmitting && (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
                 </svg>
-              </>
-            )}
-          </button>
+              )}
+            </button>
+          </div>
+
         </div>
       </div>
     </AppShell>
   );
 }
 
-// ── Question Type Row ────────────────────────────────────────────────────────
-
-interface QTRowProps {
-  qt: QuestionTypeConfig;
-  usedTypes: QuestionTypeName[];
-  onUpdate: (qt: QuestionTypeConfig) => void;
-  onRemove: () => void;
-  canRemove: boolean;
-}
-
-function QuestionTypeRow({ qt, usedTypes, onUpdate, onRemove, canRemove }: QTRowProps) {
-  const available = QUESTION_TYPE_OPTIONS.filter((t) => t === qt.type || !usedTypes.includes(t));
-
-  function stepCount(delta: number) {
-    onUpdate({ ...qt, count: Math.max(1, qt.count + delta) });
-  }
-  function stepMarks(delta: number) {
-    onUpdate({ ...qt, marks: Math.max(1, qt.marks + delta) });
-  }
-
-  return (
-    <div className="flex items-center gap-2 py-2 border-b border-[#F4F6F8] last:border-b-0">
-      {/* Type dropdown */}
-      <div className="flex-1 relative">
-        <select
-          value={qt.type}
-          onChange={(e) => onUpdate({ ...qt, type: e.target.value as QuestionTypeName })}
-          className="w-full appearance-none bg-transparent border border-[#E8ECF0] rounded-lg px-3 py-2 text-[12px] text-[#1A1A2E] font-medium focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/20 focus:border-[#7C3AED] cursor-pointer pr-6 bg-white"
-        >
-          {available.map((t) => (
-            <option key={t} value={t}>{QUESTION_TYPE_LABELS[t]}</option>
-          ))}
-        </select>
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="absolute right-2 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none">
-          <polyline points="6 9 12 15 18 9"/>
-        </svg>
-      </div>
-
-      {/* Remove × */}
-      {canRemove ? (
-        <button
-          type="button"
-          onClick={onRemove}
-          className="w-5 h-5 flex items-center justify-center text-[#94A3B8] hover:text-[#EF4444] transition-colors flex-shrink-0 text-[15px] font-medium"
-          title="Remove"
-        >
-          ×
-        </button>
-      ) : (
-        <div className="w-5 flex-shrink-0" />
-      )}
-
-      {/* Count stepper */}
-      <div className="flex items-center gap-1 w-28 justify-center flex-shrink-0">
-        <button
-          type="button"
-          onClick={() => stepCount(-1)}
-          className="w-6 h-6 rounded border border-[#E8ECF0] flex items-center justify-center text-[#5A6478] hover:bg-[#F4F6F8] transition-colors text-[14px] leading-none bg-white"
-        >−</button>
-        <span className="w-8 text-center text-[13px] font-semibold text-[#1A1A2E] tabular-nums">{qt.count}</span>
-        <button
-          type="button"
-          onClick={() => stepCount(1)}
-          className="w-6 h-6 rounded border border-[#E8ECF0] flex items-center justify-center text-[#5A6478] hover:bg-[#F4F6F8] transition-colors text-[14px] leading-none bg-white"
-        >+</button>
-      </div>
-
-      {/* Marks stepper */}
-      <div className="flex items-center gap-1 w-20 justify-center flex-shrink-0">
-        <button
-          type="button"
-          onClick={() => stepMarks(-1)}
-          className="w-6 h-6 rounded border border-[#E8ECF0] flex items-center justify-center text-[#5A6478] hover:bg-[#F4F6F8] transition-colors text-[14px] leading-none bg-white"
-        >−</button>
-        <span className="w-8 text-center text-[13px] font-semibold text-[#1A1A2E] tabular-nums">{qt.marks}</span>
-        <button
-          type="button"
-          onClick={() => stepMarks(1)}
-          className="w-6 h-6 rounded border border-[#E8ECF0] flex items-center justify-center text-[#5A6478] hover:bg-[#F4F6F8] transition-colors text-[14px] leading-none bg-white"
-        >+</button>
-      </div>
-    </div>
-  );
-}
+// Keep for TS — not used but may be imported elsewhere
+export type { QuestionTypeConfig };

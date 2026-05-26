@@ -60,29 +60,45 @@ A full-stack application that allows teachers to create structured question pape
 ### Prerequisites
 
 - Node.js ≥ 20
-- MongoDB running locally (`mongodb://localhost:27017`)
-- Redis running locally (`redis://localhost:6379`)
-- Anthropic API key
+- Docker & Docker Compose (for MongoDB + Redis)
+- Anthropic API key ([get one here](https://console.anthropic.com))
 
-### Backend Setup
+### 1. Start MongoDB + Redis
+
+```bash
+docker-compose up -d
+```
+
+This spins up:
+- MongoDB on `localhost:27017`
+- Redis on `localhost:6379`
+
+### 2. Backend Setup
 
 ```bash
 cd backend
 cp .env.example .env
-# Edit .env and add your ANTHROPIC_API_KEY
+# Open .env and set your ANTHROPIC_API_KEY
 npm install
 npm run dev
 ```
 
-### Frontend Setup
+### 3. Frontend Setup
 
 ```bash
 cd frontend
+cp .env.example .env.local
 npm install
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000)
+
+### Stop services
+
+```bash
+docker-compose down
+```
 
 ---
 

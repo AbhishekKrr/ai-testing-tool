@@ -1,9 +1,9 @@
-import Anthropic from '@anthropic-ai/sdk';
+import Groq from 'groq-sdk';
 import { AssignmentInput, QuestionPaper, Section, Question, QuestionType } from '../types';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { v4: uuidv4 } = require('uuid') as { v4: () => string };
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 const TYPE_LABELS: Record<QuestionType['type'], string> = {
   mcq:          'Multiple Choice Questions',
@@ -156,28 +156,37 @@ export async function generateQuestionPaper(
 ): Promise<QuestionPaper> {
   const prompt = buildPrompt(input);
 
-  const message = await client.messages.create({
-    model: 'claude-sonnet-4-6',
+  const completion = await client.chat.completions.create({
+    model: 'llama-3.3-70b-versatile',
     max_tokens: 8192,
-    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.7,
+    response_format: { type: 'json_object' },
+    messages: [
+      {
+        role: 'system',
+        content: 'You are an expert educator. You MUST respond with valid JSON only — no markdown, no explanation, no code fences. Your entire response must be a single JSON object.',
+      },
+      {
+        role: 'user',
+        content: prompt,
+      },
+    ],
   });
 
-  const content = message.content[0];
-  if (content.type !== 'text') {
-    throw new Error('Unexpected response type from AI');
-  }
+  const rawText = (completion.choices[0]?.message?.content ?? '').trim();
 
-  // Strip any accidental markdown wrapping
-  let jsonText = content.text.trim();
-  const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
-  if (jsonMatch) {
-    jsonText = jsonMatch[0];
-  }
+  // Log first 200 chars for debugging
+  console.log('[AI] Raw response preview:', rawText.slice(0, 200));
+
+  // Extract JSON object (in case model adds any preamble despite instructions)
+  const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+  const jsonText = jsonMatch ? jsonMatch[0] : rawText;
 
   let rawPaper: RawPaper;
   try {
     rawPaper = JSON.parse(jsonText);
   } catch (err) {
+    console.error('[AI] Full response that failed to parse:', rawText.slice(0, 500));
     throw new Error(`Failed to parse AI response as JSON: ${err}`);
   }
 

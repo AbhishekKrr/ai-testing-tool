@@ -1,28 +1,57 @@
 @import "tailwindcss";
 
-:root {
-  --font-sans: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
-}
-
 * {
   box-sizing: border-box;
 }
 
 body {
-  font-family: var(--font-sans);
+  font-family: var(--font-bricolage), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
+  background: linear-gradient(180deg, #EEEEEE 0%, #DADADA 100%);
+  min-height: 100vh;
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #c0c0c0; border-radius: 4px; }
 
-/* ── Print styles ──────────────────────────────────── */
+/* Screen-only / Print-only visibility */
+.print-only { display: none !important; }
+
+/* Print styles */
 @media print {
   .no-print { display: none !important; }
+  .print-only { display: inline !important; }
 
-  body { background: white; font-size: 11pt; }
+  /* Reset layout — make content fill the full page */
+  html, body {
+    background: white !important;
+    font-size: 11pt;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* The AppShell flex row — collapse to single column */
+  body > div,
+  .flex.h-screen {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Right panel takes full width */
+  .flex-1 {
+    display: block !important;
+    width: 100% !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  /* Scrollable main area */
+  main {
+    overflow: visible !important;
+  }
 
   .print-paper {
     border: none !important;
@@ -33,4 +62,7 @@ body {
 
   li { break-inside: avoid; }
   h3 { break-after: avoid; }
+
+  /* Paper fills full page width */
+  #question-paper { max-width: 100% !important; }
 }

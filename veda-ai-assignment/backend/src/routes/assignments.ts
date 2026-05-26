@@ -66,17 +66,15 @@ router.post('/', upload.single('file'), async (req: Request, res: Response) => {
     if (!qt.marks || qt.marks < 1) { res.status(400).json({ error: 'Marks must be at least 1' }); return; }
   }
 
-  // Extract text from uploaded file
+  // Extract text from uploaded file — only plain text is safe to pass to AI
   let fileContent: string | undefined;
   if (req.file) {
-    // Only extract text from text/PDF files; skip binary (images)
-    if (
-      req.file.mimetype === 'text/plain' ||
-      req.file.mimetype === 'application/pdf' ||
-      req.file.mimetype === 'application/octet-stream'
-    ) {
+    if (req.file.mimetype === 'text/plain') {
+      // Plain text: safe to decode directly
       fileContent = req.file.buffer.toString('utf-8').slice(0, 5000);
     }
+    // PDFs and images are binary — skip raw content to avoid corrupting the prompt
+    // (A PDF parser library would be needed for real text extraction)
   }
 
   // Compute total marks
