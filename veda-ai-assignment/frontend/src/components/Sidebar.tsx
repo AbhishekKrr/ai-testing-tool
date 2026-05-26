@@ -10,12 +10,14 @@ interface SidebarProps {
   activeOverride?: string;
   ctaLabel?: string;
   ctaHref?: string;
+  onClose?: () => void;
 }
 
 export default function Sidebar({
   activeOverride,
   ctaLabel = 'Create Assignment',
   ctaHref = '/create',
+  onClose,
 }: SidebarProps) {
   const pathname = usePathname();
   const [assignmentCount, setAssignmentCount] = useState<number>(0);
@@ -118,8 +120,24 @@ export default function Sidebar({
         overflow: 'hidden',
       }}
     >
-      {/* ── Logo ── */}
+      {/* ── Logo row (with close button on mobile) ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
+        {onClose && (
+          <button
+            onClick={onClose}
+            style={{
+              marginLeft: 'auto', order: 99,
+              width: '32px', height: '32px', flexShrink: 0,
+              background: '#F0F0F0', borderRadius: '50%',
+              border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#303030" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        )}
         <div
           style={{
             width: '40px', height: '40px', flexShrink: 0,
